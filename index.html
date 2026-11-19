@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shore Power Gap Atlas · DecarbPort</title>
+<meta name="description" content="Where ships emit at berth and where shore power is missing: AFIR readiness of 31 EU ports set against at-berth CO2 inventories for Dutch, Norwegian and Finnish ports.">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<style>
+:root{--bg:#f6f8fa;--card:#fff;--ink:#0f172a;--mut:#475569;--line:#e2e8f0;--sea:#0c4a6e;--teal:#0e7490;--red:#b91c1c;--amb:#b45309;--grn:#15803d;--vio:#6d28d9}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+a{color:var(--teal)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+header{background:linear-gradient(135deg,#082f49,#0c4a6e 55%,#0e7490);color:#fff}
+nav{display:flex;justify-content:space-between;align-items:center;padding:18px 0}
+.brand{font-weight:800;font-size:1.15rem;color:#fff;text-decoration:none}.brand span{color:#67e8f9}
+nav a.back{color:#e0f2fe;font-size:.9rem;text-decoration:none}
+.hero{padding:40px 0 52px}
+.hero h1{font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.15;max-width:800px}
+.hero p{margin-top:14px;max-width:760px;color:#e0f2fe;font-size:1.05rem}
+.stats{display:flex;flex-wrap:wrap;gap:30px;margin-top:28px}
+.stat b{display:block;font-size:1.6rem}.stat small{color:#bae6fd;font-size:.82rem}
+section{padding:44px 0}
+h2{font-size:1.5rem}.lead{color:var(--mut);margin-top:6px;max-width:800px}
+#map{height:560px;border:1px solid var(--line);border-radius:12px;margin-top:20px}
+.layers{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.layers label{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:.88rem;cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;font-size:.84rem;color:var(--mut)}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:22px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px}
+.card h3{font-size:1.05rem;margin-bottom:4px}.card .big{font-size:1.5rem;font-weight:700;margin:6px 0}
+.card p{color:var(--mut);font-size:.92rem}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:18px;font-size:.9rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+th{background:#f1f5f9;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);cursor:pointer}
+td.n,th.n{text-align:right}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600}
+.r{background:#fee2e2;color:var(--red)}.a{background:#fef3c7;color:var(--amb)}.g{background:#dcfce7;color:var(--grn)}.x{background:#f1f5f9;color:var(--mut)}
+.method{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;margin-top:18px}
+.cols p,.cols li{color:var(--mut);font-size:.92rem}.cols ul{padding-left:18px}
+footer{padding:30px 0;color:var(--mut);font-size:.85rem}footer p+p{margin-top:6px}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<nav><a class="brand" href="https://www.decarbport.nl/">Decarb<span>Port</span></a><a class="back" href="https://www.decarbport.nl/">← All tools</a></nav>
+<div class="hero">
+<h1>Shore Power Gap Atlas</h1>
+<p>Where ships emit at berth, and where shore power is missing. AFIR readiness of 31 EU ports set against at-berth CO₂ inventories for Dutch, Norwegian and Finnish ports.</p>
+<div class="stats" id="stats"></div>
+</div></div></header>
+
+<main>
+<section><div class="wrap">
+<h2>Map</h2>
+<p class="lead">Squares show AFIR readiness: the share of required shore-power connection points (container, cruise and passenger ships above 5,000 GT) installed or contracted in 2024. Circles show at-berth CO₂, sized by tonnes per year and coloured by the share that the 2030 obligation covers.</p>
+<div class="layers">
+<label><input type="checkbox" id="l-sup" checked> AFIR readiness (31 EU ports)</label>
+<label><input type="checkbox" id="l-nl" checked> At-berth CO₂, Netherlands (2024)</label>
+<label><input type="checkbox" id="l-nd" checked> At-berth CO₂, Norway and Finland (2019-2025 average)</label>
+</div>
+<div class="legend">
+<span><i class="dot" style="background:#b91c1c;border-radius:2px"></i>under 50% of required points</span>
+<span><i class="dot" style="background:#d97706;border-radius:2px"></i>50% to 99%</span>
+<span><i class="dot" style="background:#15803d;border-radius:2px"></i>all segments met</span>
+<span><i class="dot" style="background:#94a3b8;border-radius:2px"></i>not concerned by AFIR</span>
+<span><i class="dot" style="background:#6d28d9"></i>CO₂ mostly inside the 2030 obligation</span>
+<span><i class="dot" style="background:#f59e0b"></i>CO₂ mostly outside it</span>
+</div>
+<div id="map"></div>
+</div></section>
+
+<section class="method"><div class="wrap">
+<h2>The Dutch case</h2>
+<p class="lead">The Netherlands is the one country where both layers meet: the national Emissieregistratie publishes at-berth CO₂ by municipality and ship type, and DNV assessed four Dutch ports (Terneuzen is outside the AFIR maritime mandate). Two different gaps appear.</p>
+<div class="cards" id="nlcards"></div>
+<div class="scroll"><table id="nltab"></table></div>
+</div></section>
+
+<section><div class="wrap">
+<h2>AFIR readiness by port</h2>
+<p class="lead">Installed or contracted connection points against the number DNV estimates each port needs to serve 90% of 2023 traffic. Only signed contracts count. Click a column to sort.</p>
+<div class="scroll"><table id="suptab"></table></div>
+</div></section>
+
+<section class="method"><div class="wrap">
+<h2>Method and sources</h2>
+<div class="cols">
+<div><h4>Supply</h4><p>DNV (2024), <i>Status for onshore power supply in selected EU ports</i>, report 2024-1792 for Transport &amp; Environment, Table 4-1. Data collected through port interviews in March and April 2024; required points estimated from 2023 AIS traffic. A surplus in one segment is not counted against a shortfall in another. Venice's passenger requirement is shown but left out of the totals, as DNV flags it as doubtful. <a href="https://www.transportenvironment.org/articles/european-ports-unplugged">Source</a></p></div>
+<div><h4>At-berth CO₂, Netherlands</h4><p>Emissieregistratie, dataset 1990-2024 (definitive), source "Zeescheepvaart stilliggend", compartment air, by municipality and ship type. Port areas group municipalities (for example Rotterdam with Schiedam, Vlaardingen and Maassluis). The national figures include auxiliary boilers and all ship sizes. <a href="https://data.emissieregistratie.nl/">Source</a></p></div>
+<div><h4>At-berth CO₂, Norway and Finland</h4><p>DecarbPort inventory from open port-call registers (Kystverket Kystdatahuset; Fintraffic Digitraffic, CC BY 4.0), auxiliary engines only, method of Cunha et al. (2026). The 2030 share applies the obligation to container and passenger ships above 5,000 GT staying more than two hours, in ports above the AFIR call thresholds. <a href="https://nordic-at-berth.vercel.app">Nordic At-Berth CO₂</a></p></div>
+</div>
+<div class="cols">
+<div><h4>Limits</h4><ul><li>The supply layer is a 2024 snapshot of 31 ports, not every TEN-T port.</li><li>The two CO₂ sources use different methods and years; compare shapes, not decimals.</li><li>Port positions are approximate centroids.</li></ul></div>
+<div><h4>Context</h4><p>The EEA reports that 71 of 179 TEN-T core ports in the EU had shore-side electricity (461 berths) and 31 of 371 comprehensive ports (78 berths), without a downloadable dataset. <a href="https://www.eea.europa.eu/en/analysis/publications/sustainability-of-europes-mobility-systems-2025/energy-infrastructure">EEA (2025)</a></p></div>
+</div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+<p>Cite as: Cunha, D. R. (2026). Shore Power Gap Atlas: AFIR readiness and at-berth CO₂ in European ports. DecarbPort. https://www.decarbport.nl</p>
+<p>© 2026 Darliane Ribeiro Cunha. Analysis CC BY 4.0. Supply data © DNV / Transport &amp; Environment; Emissieregistratie data © Rijksoverheid. Map tiles © OpenStreetMap contributors.</p>
+</div></footer>
+
+<script>
+const f1=n=>n.toLocaleString('en-GB',{maximumFractionDigits:1});
+const SEGN={container:'Container',cruise:'Cruise',passenger:'Passenger'};
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function supColor(s){if(!s.req)return'#94a3b8';const all=Object.keys(s.seg).every(k=>s.seg[k].total_have>=s.seg[k].total_req);if(all)return'#15803d';return s.cov>=50?'#d97706':'#b91c1c'}
+function pill(s){if(!s.req)return'<span class="pill x">not concerned</span>';const c=supColor(s);const cl=c=='#15803d'?'g':c=='#d97706'?'a':'r';return`<span class="pill ${cl}">${s.cov}%</span>`}
+function segTxt(s){return Object.entries(s.seg).map(([k,v])=>`${SEGN[k]} ${v.total_have}/${v.total_req}`).join(' · ')||'–'}
+fetch('data.json?v=2026-11-19').then(r=>r.json()).then(D=>{
+ const T=D.totals;
+ const nlTot=D.demand_nl.reduce((a,d)=>a+d.kt,0),nlAfir=D.demand_nl.reduce((a,d)=>a+d.afir_kt,0);
+ document.getElementById('stats').innerHTML=[
+  [`${T.have} of ${T.req}`,'required connection points installed or contracted (2024, Venice excluded)'],
+  [`${T.none_met} of ${T.ports}`,'ports meeting none of their AFIR segments'],
+  [`${T.container_met}`,'ports with enough container-ship connections'],
+  [`${Math.round(nlAfir/nlTot*100)}%`,'of Dutch at-berth CO₂ falls on ship types the 2030 obligation covers']
+ ].map(([b,s])=>`<div class="stat"><b>${b}</b><small>${s}</small></div>`).join('');
+
+ const map=L.map('map',{scrollWheelZoom:false}).setView([55,10],4);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:12}).addTo(map);
+ const gS=L.layerGroup(),gN=L.layerGroup(),gD=L.layerGroup();
+ const rad=kt=>Math.max(4,Math.sqrt(kt)*1.5);
+ const cCol=p=>p>=50?'#6d28d9':'#f59e0b';
+ D.demand_nl.forEach(d=>L.circleMarker([d.lat,d.lon],{radius:rad(d.kt),color:cCol(d.afir_pct),weight:1,fillOpacity:.35})
+  .bindPopup(`<b>${esc(d.name)}</b><br>At-berth CO₂ 2024: <b>${f1(d.kt)} kt</b><br>Container + passenger ships: ${f1(d.afir_kt)} kt (${d.afir_pct}%)<br>Largest: ${d.top.map(t=>esc(t[0])+' '+f1(t[1])+' kt').join(', ')}<br><small>Emissieregistratie</small>`).addTo(gN));
+ D.demand_nord.forEach(d=>L.circleMarker([d.lat,d.lon],{radius:rad(d.kt),color:cCol(d.afir_pct),weight:1,fillOpacity:.35})
+  .bindPopup(`<b>${esc(d.name)}</b>, ${d.country}<br>At-berth CO₂: <b>${f1(d.kt)} kt/yr</b> (2019-2025 average)<br>Inside the 2030 obligation: ${f1(d.afir_kt)} kt (${d.afir_pct}%)<br><small>DecarbPort inventory</small>`).addTo(gD));
+ D.supply.forEach(s=>{const ic=L.divIcon({className:'',html:`<div style="width:14px;height:14px;background:${supColor(s)};border:2px solid #fff;box-shadow:0 0 2px #0006"></div>`,iconSize:[14,14],iconAnchor:[7,7]});
+  L.marker([s.lat,s.lon],{icon:ic}).bindPopup(`<b>${esc(s.name)}</b>, ${esc(s.country)}<br>${s.req?`Connection points: <b>${s.have}/${s.req}</b> (${s.cov}%)<br>${segTxt(s)}`:''}${s.flag?'<br><i>'+esc(s.flag)+'</i>':''}<br><small>DNV for T&amp;E, 2024</small>`).addTo(gS)});
+ [[gS,'l-sup'],[gN,'l-nl'],[gD,'l-nd']].forEach(([g,id])=>{g.addTo(map);document.getElementById(id).onchange=e=>e.target.checked?g.addTo(map):map.removeLayer(g)});
+
+ const R=D.nl_case.find(c=>c.port=='Rotterdam'),A=D.nl_case.find(c=>c.port=='Amsterdam');
+ const rc=R.supply.seg.container,rt=R.demand.top.find(t=>t[0]=='Container ships');
+ document.getElementById('nlcards').innerHTML=`
+ <div class="card"><h3>Rotterdam: the mandate is big, the plugs are few</h3><div class="big">${rc.total_have} of ${rc.total_req}</div><p>container-ship connection points installed or contracted, while container ships emitted ${f1(rt[1])} kt of CO₂ at berth in 2024, ${Math.round(rt[1]/R.demand.kt*100)}% of the port's ${f1(R.demand.kt)} kt.</p></div>
+ <div class="card"><h3>Amsterdam: most emissions sit outside the mandate</h3><div class="big">${A.demand.afir_pct}%</div><p>of the ${f1(A.demand.kt)} kt at-berth CO₂ in 2024 came from container and passenger ships. Tankers dominate (${esc(A.demand.top[0][0])}: ${f1(A.demand.top[0][1])} kt), and AFIR does not require shore power for them.</p></div>`;
+ document.getElementById('nltab').innerHTML='<tr><th>Port</th><th>AFIR readiness (2024)</th><th class="n">At-berth CO₂ 2024 (kt)</th><th class="n">Container + passenger (kt)</th><th>Largest ship types</th></tr>'+
+  D.nl_case.map(c=>`<tr><td>${esc(c.port)}<br><small>${esc(c.area)}${c.port=='Vlissingen'?'; Terneuzen, in the same area, is not concerned by AFIR':''}</small></td><td>${pill(c.supply)} ${segTxt(c.supply)}</td><td class="n">${f1(c.demand.kt)}</td><td class="n">${f1(c.demand.afir_kt)} (${c.demand.afir_pct}%)</td><td>${c.demand.top.map(t=>esc(t[0])+' '+f1(t[1])).join('<br>')}</td></tr>`).join('');
+
+ let rows=D.supply.slice(),key='cov',dir=1;
+ const tab=document.getElementById('suptab');
+ const cols=[['name','Port'],['country','Country'],['cov','Readiness'],['req','Points have/required'],['seg','By segment']];
+ function draw(){rows.sort((a,b)=>{let x=a[key],y=b[key];if(key=='seg'){x=segTxt(a);y=segTxt(b)}if(key=='cov'){if(x==null)x=999;if(y==null)y=999};if(x==null)x=-1;if(y==null)y=-1;return(x>y?1:x<y?-1:0)*dir});
+  tab.innerHTML='<tr>'+cols.map(([k,l])=>`<th data-k="${k}" class="${k=='req'?'n':''}">${l}</th>`).join('')+'</tr>'+
+  rows.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.country)}</td><td>${pill(s)}</td><td class="n">${s.req?s.have+'/'+s.req:'–'}</td><td>${segTxt(s)}${s.flag?'<br><small>'+esc(s.flag)+'</small>':''}</td></tr>`).join('');
+  tab.querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;dir=k==key?-dir:1;key=k;draw()})}
+ draw();
+});
+</script>
+</body>
+</html>
