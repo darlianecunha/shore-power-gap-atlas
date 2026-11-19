@@ -58,19 +58,22 @@ footer{padding:30px 0;color:var(--mut);font-size:.85rem}footer p+p{margin-top:6p
 <main>
 <section><div class="wrap">
 <h2>Map</h2>
-<p class="lead">Squares show AFIR readiness: the share of required shore-power connection points (container, cruise and passenger ships above 5,000 GT) installed or contracted in 2024. Circles show at-berth CO₂, sized by tonnes per year and coloured by the share that the 2030 obligation covers.</p>
+<p class="lead">Squares show AFIR readiness as DNV rated it in 2024: whether each port has enough shore-power connection points installed or contracted for its container, cruise and passenger ships above 5,000 GT. Circles show at-berth CO₂, sized by tonnes per year and coloured by the share that the 2030 obligation covers.</p>
 <div class="layers">
 <label><input type="checkbox" id="l-sup" checked> AFIR readiness (31 EU ports)</label>
 <label><input type="checkbox" id="l-nl" checked> At-berth CO₂, Netherlands (2024)</label>
 <label><input type="checkbox" id="l-nd" checked> At-berth CO₂, Norway and Finland (2019-2025 average)</label>
 </div>
 <div class="legend">
-<span><i class="dot" style="background:#b91c1c;border-radius:2px"></i>under 50% of required points</span>
-<span><i class="dot" style="background:#d97706;border-radius:2px"></i>50% to 99%</span>
-<span><i class="dot" style="background:#15803d;border-radius:2px"></i>all segments met</span>
-<span><i class="dot" style="background:#94a3b8;border-radius:2px"></i>not concerned by AFIR</span>
-<span><i class="dot" style="background:#6d28d9"></i>CO₂ mostly inside the 2030 obligation</span>
-<span><i class="dot" style="background:#f59e0b"></i>CO₂ mostly outside it</span>
+<span><b>Squares, AFIR readiness (DNV rating):</b></span>
+<span><i class="dot" style="background:#b91c1c;border-radius:2px"></i>no segment met (21 ports)</span>
+<span><i class="dot" style="background:#d97706;border-radius:2px"></i>some segments met (7)</span>
+<span><i class="dot" style="background:#15803d;border-radius:2px"></i>all segments met (none in 2024)</span>
+<span><i class="dot" style="background:#94a3b8;border-radius:2px"></i>not concerned by AFIR (3)</span>
+</div><div class="legend">
+<span><b>Circles, at-berth CO₂ (size = kt per year):</b></span>
+<span><i class="dot" style="background:#2563eb55;border:2px solid #2563eb"></i>half or more inside the 2030 obligation</span>
+<span><i class="dot" style="background:#47556955;border:2px solid #475569"></i>mostly outside it</span>
 </div>
 <div id="map"></div>
 </div></section>
@@ -111,8 +114,8 @@ footer{padding:30px 0;color:var(--mut);font-size:.85rem}footer p+p{margin-top:6p
 const f1=n=>n.toLocaleString('en-GB',{maximumFractionDigits:1});
 const SEGN={container:'Container',cruise:'Cruise',passenger:'Passenger'};
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function supColor(s){if(!s.req)return'#94a3b8';const all=Object.keys(s.seg).every(k=>s.seg[k].total_have>=s.seg[k].total_req);if(all)return'#15803d';return s.cov>=50?'#d97706':'#b91c1c'}
-function pill(s){if(!s.req)return'<span class="pill x">not concerned</span>';const c=supColor(s);const cl=c=='#15803d'?'g':c=='#d97706'?'a':'r';return`<span class="pill ${cl}">${s.cov}%</span>`}
+function supColor(s){if(!s.req)return'#94a3b8';const n=Object.keys(s.seg).length,m=s.met.length;return m==n?'#15803d':m>0?'#d97706':'#b91c1c'}
+function pill(s){if(!s.req)return'<span class="pill x">not concerned</span>';const c=supColor(s);const cl=c=='#15803d'?'g':c=='#d97706'?'a':'r';return`<span class="pill ${cl}">${s.met.length} of ${Object.keys(s.seg).length} met</span> <small>${s.cov}% of points</small>`}
 function segTxt(s){return Object.entries(s.seg).map(([k,v])=>`${SEGN[k]} ${v.total_have}/${v.total_req}`).join(' · ')||'–'}
 fetch('data.json?v=2026-11-19').then(r=>r.json()).then(D=>{
  const T=D.totals;
@@ -127,11 +130,11 @@ fetch('data.json?v=2026-11-19').then(r=>r.json()).then(D=>{
  const map=L.map('map',{scrollWheelZoom:false}).setView([55,10],4);
  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:12}).addTo(map);
  const gS=L.layerGroup(),gN=L.layerGroup(),gD=L.layerGroup();
- const rad=kt=>Math.max(4,Math.sqrt(kt)*1.5);
- const cCol=p=>p>=50?'#6d28d9':'#f59e0b';
- D.demand_nl.forEach(d=>L.circleMarker([d.lat,d.lon],{radius:rad(d.kt),color:cCol(d.afir_pct),weight:1,fillOpacity:.35})
+ const rad=kt=>Math.min(22,Math.max(4,Math.sqrt(kt)*1.1));
+ const cCol=p=>p>=50?'#2563eb':'#475569';
+ D.demand_nl.forEach(d=>L.circleMarker([d.lat,d.lon],{radius:rad(d.kt),color:cCol(d.afir_pct),weight:1.5,fillOpacity:.25})
   .bindPopup(`<b>${esc(d.name)}</b><br>At-berth CO₂ 2024: <b>${f1(d.kt)} kt</b><br>Container + passenger ships: ${f1(d.afir_kt)} kt (${d.afir_pct}%)<br>Largest: ${d.top.map(t=>esc(t[0])+' '+f1(t[1])+' kt').join(', ')}<br><small>Emissieregistratie</small>`).addTo(gN));
- D.demand_nord.forEach(d=>L.circleMarker([d.lat,d.lon],{radius:rad(d.kt),color:cCol(d.afir_pct),weight:1,fillOpacity:.35})
+ D.demand_nord.forEach(d=>L.circleMarker([d.lat,d.lon],{radius:rad(d.kt),color:cCol(d.afir_pct),weight:1.5,fillOpacity:.25})
   .bindPopup(`<b>${esc(d.name)}</b>, ${d.country}<br>At-berth CO₂: <b>${f1(d.kt)} kt/yr</b> (2019-2025 average)<br>Inside the 2030 obligation: ${f1(d.afir_kt)} kt (${d.afir_pct}%)<br><small>DecarbPort inventory</small>`).addTo(gD));
  D.supply.forEach(s=>{const ic=L.divIcon({className:'',html:`<div style="width:14px;height:14px;background:${supColor(s)};border:2px solid #fff;box-shadow:0 0 2px #0006"></div>`,iconSize:[14,14],iconAnchor:[7,7]});
   L.marker([s.lat,s.lon],{icon:ic}).bindPopup(`<b>${esc(s.name)}</b>, ${esc(s.country)}<br>${s.req?`Connection points: <b>${s.have}/${s.req}</b> (${s.cov}%)<br>${segTxt(s)}`:''}${s.flag?'<br><i>'+esc(s.flag)+'</i>':''}<br><small>DNV for T&amp;E, 2024</small>`).addTo(gS)});
@@ -148,7 +151,7 @@ fetch('data.json?v=2026-11-19').then(r=>r.json()).then(D=>{
  let rows=D.supply.slice(),key='cov',dir=1;
  const tab=document.getElementById('suptab');
  const cols=[['name','Port'],['country','Country'],['cov','Readiness'],['req','Points have/required'],['seg','By segment']];
- function draw(){rows.sort((a,b)=>{let x=a[key],y=b[key];if(key=='seg'){x=segTxt(a);y=segTxt(b)}if(key=='cov'){if(x==null)x=999;if(y==null)y=999};if(x==null)x=-1;if(y==null)y=-1;return(x>y?1:x<y?-1:0)*dir});
+ function draw(){rows.sort((a,b)=>{let x=a[key],y=b[key];if(key=='seg'){x=segTxt(a);y=segTxt(b)}if(key=='cov'){x=a.req?a.met.length*1000+a.cov:99999;y=b.req?b.met.length*1000+b.cov:99999};if(x==null)x=-1;if(y==null)y=-1;return(x>y?1:x<y?-1:0)*dir});
   tab.innerHTML='<tr>'+cols.map(([k,l])=>`<th data-k="${k}" class="${k=='req'?'n':''}">${l}</th>`).join('')+'</tr>'+
   rows.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.country)}</td><td>${pill(s)}</td><td class="n">${s.req?s.have+'/'+s.req:'–'}</td><td>${segTxt(s)}${s.flag?'<br><small>'+esc(s.flag)+'</small>':''}</td></tr>`).join('');
   tab.querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;dir=k==key?-dir:1;key=k;draw()})}
