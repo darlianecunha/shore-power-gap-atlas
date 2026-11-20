@@ -121,7 +121,7 @@ fetch('data.json?v=2026-11-19').then(r=>r.json()).then(D=>{
  const T=D.totals;
  const nlTot=D.demand_nl.reduce((a,d)=>a+d.kt,0),nlAfir=D.demand_nl.reduce((a,d)=>a+d.afir_kt,0);
  document.getElementById('stats').innerHTML=[
-  [`${T.have} of ${T.req}`,'required connection points installed or contracted (2024, Venice excluded)'],
+  ['89 of 445','required shore-power connection points installed or contracted in 2024 (DNV)'],
   [`${T.none_met} of ${T.ports}`,'ports meeting none of their AFIR segments'],
   [`${T.container_met}`,'ports with enough container-ship connections'],
   [`${Math.round(nlAfir/nlTot*100)}%`,'of Dutch at-berth CO₂ falls on ship types the 2030 obligation covers']
