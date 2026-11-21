@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shore Power Gap Atlas</title>
-<meta name="description" content="Where ships emit at berth and where shore power is missing: AFIR readiness of 31 EU ports set against at-berth CO2 inventories for Dutch, Norwegian and Finnish ports.">
+<meta name="description" content="Where ships emit at berth and where shore power is missing: AFIR readiness of 31 EU ports set against at-berth CO2 for Dutch, Norwegian and Finnish ports and EU-wide MRV data by ship type.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <style>
@@ -58,7 +58,7 @@ footer{padding:30px 0;color:var(--mut);font-size:.85rem}footer p+p{margin-top:6p
 <main>
 <section><div class="wrap">
 <h2>Map</h2>
-<p class="lead">Squares show AFIR readiness as DNV rated it in 2024: whether each port has enough shore-power connection points installed or contracted for its container, cruise and passenger ships above 5,000 GT. Circles show at-berth CO₂, sized by tonnes per year and coloured by the share that the 2030 obligation covers.</p>
+<p class="lead">Squares show AFIR readiness as DNV rated it (port interviews in 2024, updated in April and May 2025): whether each port has enough shore-power connection points installed or contracted for its container, cruise and passenger ships above 5,000 GT. Circles show at-berth CO₂, sized by tonnes per year and coloured by the share that the 2030 obligation covers.</p>
 <div class="layers">
 <label><input type="checkbox" id="l-sup" checked> AFIR readiness (31 EU ports)</label>
 <label><input type="checkbox" id="l-nl" checked> At-berth CO₂, Netherlands (2024)</label>
@@ -68,7 +68,7 @@ footer{padding:30px 0;color:var(--mut);font-size:.85rem}footer p+p{margin-top:6p
 <span><b>Squares, AFIR readiness (DNV rating):</b></span>
 <span><i class="dot" style="background:#b91c1c;border-radius:2px"></i>no segment met (21 ports)</span>
 <span><i class="dot" style="background:#d97706;border-radius:2px"></i>some segments met (7)</span>
-<span><i class="dot" style="background:#15803d;border-radius:2px"></i>all segments met (none in 2024)</span>
+<span><i class="dot" style="background:#15803d;border-radius:2px"></i>all segments met (none)</span>
 <span><i class="dot" style="background:#94a3b8;border-radius:2px"></i>not concerned by AFIR (3)</span>
 </div><div class="legend">
 <span><b>Circles, at-berth CO₂ (size = kt per year):</b></span>
@@ -91,15 +91,23 @@ footer{padding:30px 0;color:var(--mut);font-size:.85rem}footer p+p{margin-top:6p
 <div class="scroll"><table id="suptab"></table></div>
 </div></section>
 
+<section><div class="wrap">
+<h2>Beyond the mandate: at-berth CO₂ across the EU</h2>
+<p class="lead">Ships under the EU MRV regulation, mostly above 5,000 GT, report the CO₂ they emit at berth in EU and EEA ports. In 2025 that came to <b id="eu-tot"></b> from <span id="eu-n"></span> ships. The AFIR and FuelEU shore-power obligation covers container and passenger ships only.</p>
+<div class="cards" id="eucards"></div>
+<div class="scroll"><table id="eutab"></table></div>
+</div></section>
+
 <section class="method"><div class="wrap">
 <h2>Method and sources</h2>
 <div class="cols">
-<div><h4>Supply</h4><p>DNV (2024), <i>Status for onshore power supply in selected EU ports</i>, report 2024-1792 for Transport &amp; Environment, Table 4-1. Data collected through port interviews in March and April 2024; required points estimated from 2023 AIS traffic. A surplus in one segment is not counted against a shortfall in another. Venice's passenger requirement is shown but left out of the totals, as DNV flags it as doubtful. <a href="https://www.transportenvironment.org/articles/european-ports-unplugged">Source</a></p></div>
+<div><h4>Supply</h4><p>DNV for Transport &amp; Environment, report 2024-1792 (Table 4-1), updated with the ports in April and May 2025 and published in T&amp;E's briefing <i>European ports unplugged</i> (July 2025, Annex II). Required points are estimated from 2023 AIS traffic. The 2025 update leaves every port unchanged except Venice, whose passenger-ship requirement was revised from 216 to 2 points. A surplus in one segment is not counted against a shortfall in another. Installed points above a segment's requirement are capped at that requirement, as T&amp;E does. <a href="https://www.transportenvironment.org/articles/european-ports-unplugged">Source</a></p></div>
 <div><h4>At-berth CO₂, Netherlands</h4><p>Emissieregistratie, dataset 1990-2024 (definitive), source "Zeescheepvaart stilliggend", compartment air, by municipality and ship type. Port areas group municipalities (for example Rotterdam with Schiedam, Vlaardingen and Maassluis). The national figures include auxiliary boilers and all ship sizes. <a href="https://data.emissieregistratie.nl/">Source</a></p></div>
 <div><h4>At-berth CO₂, Norway and Finland</h4><p>Inventory by the author from open port-call registers (Kystverket Kystdatahuset; Fintraffic Digitraffic, CC BY 4.0), auxiliary engines only, method of Cunha et al. (2026). The 2030 share applies the obligation to container and passenger ships above 5,000 GT staying more than two hours, in ports above the AFIR call thresholds. Nordic At-Berth CO₂ inventory</p></div>
 </div>
 <div class="cols">
-<div><h4>Limits</h4><ul><li>The supply layer is a 2024 snapshot of 31 ports, not every TEN-T port.</li><li>The two CO₂ sources use different methods and years; compare shapes, not decimals.</li><li>Port positions are approximate centroids.</li></ul></div>
+<div><h4>At-berth CO₂, EU (MRV)</h4><p>EMSA THETIS-MRV, 2025 publication (version of 21 July 2026), full emission reports, field "CO₂ emissions which occurred within ports under a MS jurisdiction at berth". The carbon cost counts only ships with emissions to report under the EU ETS and applies the 2025 phase-in (70% of verified CO₂; all at-berth emissions are in scope) at the 2025 average allowance price of €74 per tonne (ESMA, 2026); allowances are surrendered later, at the price of the day. The 2026 figure applies 100% of CO₂-equivalent at the same price. Offshore ships enter the ETS in 2027 and are left out of both. Partial reports (ships that changed company during the year) are excluded, as they may overlap with full reports; full reports total 150 Mt of CO₂. Container/ro-ro ships are not counted as covered by the shore-power obligation, which applies to container ships and passenger ships. <a href="https://mrv.emsa.europa.eu/">Source</a></p></div>
+<div><h4>Limits</h4><ul><li>The supply layer is a May 2025 snapshot of 31 ports, not every TEN-T port; planned or tendered projects are not counted.</li><li>The two CO₂ sources use different methods and years; compare shapes, not decimals.</li><li>Port positions are approximate centroids.</li></ul></div>
 <div><h4>Context</h4><p>The EEA reports that 71 of 179 TEN-T core ports in the EU had shore-side electricity (461 berths) and 31 of 371 comprehensive ports (78 berths), without a downloadable dataset. <a href="https://www.eea.europa.eu/en/analysis/publications/sustainability-of-europes-mobility-systems-2025/energy-infrastructure">EEA (2025)</a></p></div>
 </div>
 </div></section>
@@ -117,12 +125,12 @@ function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','
 function supColor(s){if(!s.req)return'#94a3b8';const n=Object.keys(s.seg).length,m=s.met.length;return m==n?'#15803d':m>0?'#d97706':'#b91c1c'}
 function pill(s){if(!s.req)return'<span class="pill x">not concerned</span>';const c=supColor(s);const cl=c=='#15803d'?'g':c=='#d97706'?'a':'r';return`<span class="pill ${cl}">${s.met.length} of ${Object.keys(s.seg).length} met</span> <small>${s.cov}% of points</small>`}
 function segTxt(s){return Object.entries(s.seg).map(([k,v])=>`${SEGN[k]} ${v.total_have}/${v.total_req}`).join(' · ')||'–'}
-fetch('data.json?v=2026-11-19').then(r=>r.json()).then(D=>{
+fetch('data.json?v=2026-11-21').then(r=>r.json()).then(D=>{
  const T=D.totals;
  const nlTot=D.demand_nl.reduce((a,d)=>a+d.kt,0),nlAfir=D.demand_nl.reduce((a,d)=>a+d.afir_kt,0);
  document.getElementById('stats').innerHTML=[
-  ['89 of 445','required shore-power connection points installed or contracted in 2024 (DNV)'],
-  [`${T.none_met} of ${T.ports}`,'ports meeting none of their AFIR segments'],
+  [`${T.have} of ${T.req}`,'required shore-power connection points installed or contracted (DNV for T&amp;E, May 2025)'],
+  [`${T.none_met} of ${D.supply.filter(s=>s.req).length}`,'ports in the AFIR mandate meeting none of their segments'],
   [`${T.container_met}`,'ports with enough container-ship connections'],
   [`${Math.round(nlAfir/nlTot*100)}%`,'of Dutch at-berth CO₂ falls on ship types the 2030 obligation covers']
  ].map(([b,s])=>`<div class="stat"><b>${b}</b><small>${s}</small></div>`).join('');
@@ -137,7 +145,7 @@ fetch('data.json?v=2026-11-19').then(r=>r.json()).then(D=>{
  D.demand_nord.forEach(d=>L.circleMarker([d.lat,d.lon],{radius:rad(d.kt),color:cCol(d.afir_pct),weight:1.5,fillOpacity:.25})
   .bindPopup(`<b>${esc(d.name)}</b>, ${d.country}<br>At-berth CO₂: <b>${f1(d.kt)} kt/yr</b> (2019-2025 average)<br>Inside the 2030 obligation: ${f1(d.afir_kt)} kt (${d.afir_pct}%)<br><small>Author's inventory, open port-call registers</small>`).addTo(gD));
  D.supply.forEach(s=>{const ic=L.divIcon({className:'',html:`<div style="width:14px;height:14px;background:${supColor(s)};border:2px solid #fff;box-shadow:0 0 2px #0006"></div>`,iconSize:[14,14],iconAnchor:[7,7]});
-  L.marker([s.lat,s.lon],{icon:ic}).bindPopup(`<b>${esc(s.name)}</b>, ${esc(s.country)}<br>${s.req?`Connection points: <b>${s.have}/${s.req}</b> (${s.cov}%)<br>${segTxt(s)}`:''}${s.flag?'<br><i>'+esc(s.flag)+'</i>':''}<br><small>DNV for T&amp;E, 2024</small>`).addTo(gS)});
+  L.marker([s.lat,s.lon],{icon:ic}).bindPopup(`<b>${esc(s.name)}</b>, ${esc(s.country)}<br>${s.req?`Connection points: <b>${s.have}/${s.req}</b> (${s.cov}%)<br>${segTxt(s)}`:''}${s.flag?'<br><i>'+esc(s.flag)+'</i>':''}<br><small>DNV for T&amp;E, May 2025</small>`).addTo(gS)});
  [[gS,'l-sup'],[gN,'l-nl'],[gD,'l-nd']].forEach(([g,id])=>{g.addTo(map);document.getElementById(id).onchange=e=>e.target.checked?g.addTo(map):map.removeLayer(g)});
 
  const R=D.nl_case.find(c=>c.port=='Rotterdam'),A=D.nl_case.find(c=>c.port=='Amsterdam');
@@ -145,8 +153,20 @@ fetch('data.json?v=2026-11-19').then(r=>r.json()).then(D=>{
  document.getElementById('nlcards').innerHTML=`
  <div class="card"><h3>Rotterdam: the mandate is big, the plugs are few</h3><div class="big">${rc.total_have} of ${rc.total_req}</div><p>container-ship connection points installed or contracted, while container ships emitted ${f1(rt[1])} kt of CO₂ at berth in 2024, ${Math.round(rt[1]/R.demand.kt*100)}% of the port's ${f1(R.demand.kt)} kt.</p></div>
  <div class="card"><h3>Amsterdam: most emissions sit outside the mandate</h3><div class="big">${A.demand.afir_pct}%</div><p>of the ${f1(A.demand.kt)} kt at-berth CO₂ in 2024 came from container and passenger ships. Tankers dominate (${esc(A.demand.top[0][0])}: ${f1(A.demand.top[0][1])} kt), and AFIR does not require shore power for them.</p></div>`;
- document.getElementById('nltab').innerHTML='<tr><th>Port</th><th>AFIR readiness (2024)</th><th class="n">At-berth CO₂ 2024 (kt)</th><th class="n">Container + passenger (kt)</th><th>Largest ship types</th></tr>'+
+ document.getElementById('nltab').innerHTML='<tr><th>Port</th><th>AFIR readiness (2025)</th><th class="n">At-berth CO₂ 2024 (kt)</th><th class="n">Container + passenger (kt)</th><th>Largest ship types</th></tr>'+
   D.nl_case.map(c=>`<tr><td>${esc(c.port)}<br><small>${esc(c.area)}${c.port=='Vlissingen'?'; Terneuzen, in the same area, is not concerned by AFIR':''}</small></td><td>${pill(c.supply)} ${segTxt(c.supply)}</td><td class="n">${f1(c.demand.kt)}</td><td class="n">${f1(c.demand.afir_kt)} (${c.demand.afir_pct}%)</td><td>${c.demand.top.map(t=>esc(t[0])+' '+f1(t[1])).join('<br>')}</td></tr>`).join('');
+
+ const E=D.eu_mrv.map(r=>({...r,co2:+r.at_berth_co2_t,share:+r.share_pct,ets:+r.ets_2025_eur_m,ets26:+r.ets_100pct_co2e_eur_m,own:+r.berth_share_of_own_total_pct,ships:+r.ships}));
+ const eT=E.reduce((a,r)=>a+r.co2,0),eA=E.filter(r=>r.afir_ops_mandate=='yes').reduce((a,r)=>a+r.co2,0);
+ const etsT=E.reduce((a,r)=>a+r.ets,0),etsA=E.filter(r=>r.afir_ops_mandate=='yes').reduce((a,r)=>a+r.ets,0),ets26=E.reduce((a,r)=>a+r.ets26,0);
+ document.getElementById('eu-tot').textContent=f1(eT/1e6)+' Mt';document.getElementById('eu-n').textContent=E.reduce((a,r)=>a+r.ships,0).toLocaleString('en-GB');
+ document.getElementById('eucards').innerHTML=`
+ <div class="card"><h3>Outside the shore-power mandate</h3><div class="big">${Math.round(100-eA/eT*100)}%</div><p>of EU at-berth CO₂ comes from ship types AFIR does not cover. Oil and chemical tankers alone emit ${f1(E.filter(r=>/tanker/i.test(r.ship_type)).reduce((a,r)=>a+r.co2,0)/1e6)} Mt.</p></div>
+ <div class="card"><h3>The carbon bill at berth, 2025</h3><div class="big">€${Math.round(etsT)} million</div><p>in EU ETS allowances for CO₂ emitted at berth (70% phase-in, €74 per tonne). Ships covered by the shore-power mandate account for €${Math.round(etsA)} million of it.</p></div>
+ <div class="card"><h3>From 2026, the same berth time costs more</h3><div class="big">€${Math.round(ets26)} million</div><p>if the 2025 at-berth emissions were priced under 2026 rules: 100% coverage, methane and nitrous oxide included, same allowance price.</p></div>`;
+ const mx=Math.max(...E.map(r=>r.co2));
+ document.getElementById('eutab').innerHTML='<tr><th>Ship type</th><th>Shore-power mandate</th><th class="n">Ships</th><th class="n">At-berth CO₂ (kt)</th><th style="width:28%"></th><th class="n">Share of own CO₂</th><th class="n">ETS 2025 (€m)</th></tr>'+
+  E.map(r=>`<tr><td>${esc(r.ship_type)}</td><td>${r.afir_ops_mandate=='yes'?'<span class="pill g">covered</span>':'<span class="pill x">not covered</span>'}</td><td class="n">${r.ships.toLocaleString('en-GB')}</td><td class="n">${f1(r.co2/1000)}</td><td><div style="height:10px;border-radius:3px;background:${r.afir_ops_mandate=='yes'?'#2563eb':'#94a3b8'};width:${(r.co2/mx*100).toFixed(1)}%"></div></td><td class="n">${f1(r.own)}%</td><td class="n">${r.ets?f1(r.ets):'–'}</td></tr>`).join('');
 
  let rows=D.supply.slice(),key='cov',dir=1;
  const tab=document.getElementById('suptab');
